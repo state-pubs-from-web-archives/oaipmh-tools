@@ -1,10 +1,11 @@
 
-"""dc_breaker script for processing OAI-PMH 2.0 Repository XML Files"""
+"""dc_vector script for generating binary and total vectors"""
 
 import argparse
 from xml.etree import ElementTree
 import sys
 from collections import Counter
+import pandas as pd
 
 OAI_NAMESPACE = "{http://www.openarchives.org/OAI/2.0/oai_dc/}"
 DC_NAMESPACE = "{http://purl.org/dc/elements/1.1/}"
@@ -31,7 +32,7 @@ def create_vector(file_name, option):
                 raise RepoInvestigatorException(
                                                 "Record does not have\
                                                 a valid Identifier") from err
-            try :
+            try:
                 for element in elem[1][0]:
                     element = element.tag.split("}")
                     element = element[1].strip()
@@ -40,12 +41,26 @@ def create_vector(file_name, option):
                     else:
                         if element not in vector:
                             vector[element] += 1
-            except :
+            except:
+                yield ([vector["record_id"],
+                        vector["title"],
+                        vector["creator"],
+                        vector["contributor"],
+                        vector["publisher"],
+                        vector["date"],
+                        vector["language"],
+                        vector["description"],
+                        vector["subject"],
+                        vector["coverage"],
+                        vector["source"],
+                        vector["relation"],
+                        vector["rights"],
+                        vector["type"],
+                        vector["format"],
+                        vector["identifier"]])
                 continue
-                
-
-            yield (vector["record_id"] + '\t' + ",".join(map(str,
-                   [vector["title"],
+            yield ([vector["record_id"],
+                    vector["title"],
                     vector["creator"],
                     vector["contributor"],
                     vector["publisher"],
@@ -59,12 +74,17 @@ def create_vector(file_name, option):
                     vector["rights"],
                     vector["type"],
                     vector["format"],
-                    vector["identifier"]])))
+                    vector["identifier"]])
 
 
 def main():
     """Main file handling and option handling"""
 
+    df = pd.DataFrame(columns=["record_id", "title", "creator", "contributor",
+                               "publisher", "date", "language",
+                               "description", "subject", "coverage",
+                               "source", "relation", "rights", "type",
+                               "format", "identifier"])
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--binary_vector", action="store_true",
                         dest="bin_vect", default=False,
@@ -85,11 +105,18 @@ def main():
 
     if args.bin_vect:
         for record in create_vector(args.filename, 'b'):
+            df.loc[len(df.index)] = record
             print(record)
+        df.to_csv(args.filename.split(".")[0]+".csv")
 
     if args.count_vect:
+        c = 0
         for record in create_vector(args.filename, 'c'):
+            df.loc[len(df.index)] = record
             print(record)
+            c += 1
+        print(c)
+        df.to_csv(args.filename.split(".")[0]+".csv")
 
 
 if __name__ == "__main__":
