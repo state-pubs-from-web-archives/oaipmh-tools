@@ -95,7 +95,7 @@ In linux :
  ```
 * For help
  ```bash
- python3 dc_vector.py -h
+ python3 dc_total.py -h
  ```
 
 Here the input file should be the harvested metadata which is in xml format.
